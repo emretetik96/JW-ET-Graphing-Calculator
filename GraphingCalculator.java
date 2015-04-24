@@ -1,0 +1,233 @@
+// Squad
+// Graphing Calculator Project
+// John Waldo and Emre Tetik
+// Period 09
+// 1/23/14
+import javax.swing.*;
+import java.awt.*;
+//actionEvent and actionListener are in the below package
+import java.awt.event.*;
+import java.lang.Math.*;
+
+public class GraphingCalculator implements ActionListener {
+
+    JButton GraphButton;
+    JButton XinterceptButton;
+    JButton YinterceptButton;
+    JButton AsymptotesButton;
+    JFrame frame;
+    JPanel graphPanel;
+    JTextField inputFunctionField;
+    JTextField setXMinField;
+    JTextField setXMaxField;
+    JTextField setYMinField;
+    JTextField setYMaxField;
+    String inputEquation = "";
+    double XMin = -5.0;
+    double XMax = 5.0;
+    double YMin = -5.0;
+    double YMax = 5.0;
+    private static final String[] VALID = {".", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "-", "*", "/", "^", "(", ")", "x", "e", "pi", "sin", "cos", "tan", "cot", "csc", "sec", "log"};
+
+    public String getInputEquation() {        
+        return inputEquation;
+    }
+
+    //helper class that allows you to manipulate the graph panel
+    class MyGraphPanel extends JPanel {
+
+        public void paintComponent(Graphics g) {
+
+            //setcolor must go before fillRect. setColor sets the default color,
+            //fillRect fills the component with the default color
+            g.setColor(Color.white);
+            g.fillRect(0, 0, this.getWidth(), this.getHeight());
+
+            //this is now to construct the axes over the white space that we created in the lines above
+            g.setColor(Color.black);
+            //create x-axis
+            g.drawLine(0, 350, 700, 350);
+            //create y-axis
+            g.drawLine(350, 0, 350, 700);
+
+            //this is where the MAGIC happens
+            //this assumes a square graph, with the origin at the center
+            if ( !(inputFunctionField.getText().equals(""))) {
+                Parser myParser = new Parser(inputEquation);
+                double totalXUnits = Math.abs(XMin) + XMax; 
+                for(int p = 1; p < 700; p++) {
+                    double xUnitVal = XMin + (p * totalXUnits / 700.0);
+                    double yUnitVal = myParser.simplify(xUnitVal);
+                    int yPixelVal = (int)(yUnitVal * 700.0 / totalXUnits);
+                    int finalYPixelVal = 350 - yPixelVal;
+                    g.fillRect(p, finalYPixelVal, 1, 1); 
+                }
+            }
+        }
+    }
+
+    //helper class that allows you to manipulate the button panel
+    class MyButtonPanel extends JPanel {
+
+        public void paintComponent(Graphics g) {
+            g.setColor(Color.blue);
+            g.fillRect(0, 0, this.getWidth(), this.getHeight());
+        }
+
+    }
+
+
+    public void go() {
+        
+        //instantiate a Frame, some Panels, and some Buttons
+        frame = new JFrame();
+        JPanel panel = new MyButtonPanel();
+        graphPanel = new MyGraphPanel();
+        JPanel inputPanel = new JPanel();
+        JLabel inputFunctionLabel = new JLabel("y=");
+        JLabel setXMin = new JLabel("Set Xmin=");
+        JLabel setXMax = new JLabel("Set Xmax=");
+        JLabel setYMin = new JLabel("Set Ymin=");
+        JLabel setYMax = new JLabel("Set Ymax="); 
+        inputFunctionField = new JTextField(22);
+        XinterceptButton = new JButton("Calculate x-intercepts");
+        YinterceptButton = new JButton("Calculate y-intercepts");
+        AsymptotesButton = new JButton("Calculate Asymptotes");
+        GraphButton = new JButton("Graph");
+        setXMinField = new JTextField(4);
+        setXMinField.setText("-5.0");
+        setXMaxField = new JTextField(4);
+        setXMaxField.setText("5.0");
+        setYMinField = new JTextField(4);
+        setYMinField.setText("-5.0");
+        setYMaxField = new JTextField(4);
+        setYMaxField.setText("5.0");
+
+        //lend each button your ear
+        XinterceptButton.addActionListener(this);
+        YinterceptButton.addActionListener(this);
+        AsymptotesButton.addActionListener(this);
+        GraphButton.addActionListener(this);
+        inputFunctionField.addActionListener(this);
+        setXMinField.addActionListener(this);
+        setXMaxField.addActionListener(this);
+        setYMinField.addActionListener(this);
+        setYMaxField.addActionListener(this);
+
+        //set button parameters
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        //add buttons, labels, and textfields to the panel
+	panel.setPreferredSize(new Dimension(300, 738));
+        panel.add(GraphButton);
+        panel.add(XinterceptButton);
+        panel.add(YinterceptButton);
+        panel.add(AsymptotesButton);
+        
+        inputPanel.add(inputFunctionLabel);
+        inputPanel.add(inputFunctionField);
+        inputPanel.add(setXMin);
+        inputPanel.add(setXMinField);
+        inputPanel.add(setXMax);
+        inputPanel.add(setXMaxField);
+        inputPanel.add(setYMin);
+        inputPanel.add(setYMinField);
+        inputPanel.add(setYMax);
+        inputPanel.add(setYMaxField);
+
+        //add panels to frame, set frame parameters
+        frame.getContentPane().add(BorderLayout.EAST, panel);
+        frame.getContentPane().add(BorderLayout.SOUTH, inputPanel);
+        frame.getContentPane().add(BorderLayout.CENTER, graphPanel);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(1000, 738);
+        frame.setVisible(true);
+
+    }
+
+    //event handler
+    public void actionPerformed(ActionEvent Event) {
+        Parser myParser = new Parser(inputFunctionField.getText());
+        if (Event.getSource() == setXMinField) {
+            XMin = Integer.parseInt(setXMinField.getText());
+        }
+        else if (Event.getSource() == setXMaxField) {
+            XMax = Integer.parseInt(setXMaxField.getText());
+        }
+        else if (Event.getSource() == setYMinField) {
+            YMin = Integer.parseInt(setYMinField.getText());
+        }
+        else if (Event.getSource() == setYMaxField) {
+            YMax = Integer.parseInt(setYMaxField.getText());
+        }
+        else if (Event.getSource() == inputFunctionField) {
+            if ( isValid(inputFunctionField.getText()) ) {
+                inputEquation = inputFunctionField.getText();
+		XinterceptButton.setText("Calculate x-intercepts");
+		YinterceptButton.setText("Calculate y-intercepts");
+		AsymptotesButton.setText("Calculate Asymptotes");
+            }
+            else {
+                System.out.println("You have typed invalid characters in, or you have not typed anything at all. Type in an expression in the form y = f(x) so that its special values may be calculated");
+            }
+        }
+        else {
+            if ( isValid(inputFunctionField.getText()) ) {
+
+                if (Event.getSource() == GraphButton) {
+                    if ( isValid(setXMinField.getText()) && !(setXMinField.getText().contains("x"))
+                         && isValid(setXMaxField.getText()) && !(setXMaxField.getText().contains("x"))             
+                         && isValid(setYMinField.getText()) && !(setYMinField.getText().contains("x")) 
+                         && isValid(setYMaxField.getText()) && !(setYMaxField.getText().contains("x")) 
+                         ) {
+                        try {
+                            graphPanel.repaint();
+                        }
+                        catch (ArithmeticException ae) {
+                            System.out.println("You have not typed in a valid equation.");
+                        }
+                    }
+                    else {
+                        System.out.println("Please type in values for the viewing window.");
+                    }
+                }
+                else if (Event.getSource() == XinterceptButton) {
+                    XinterceptButton.setText("X-int: " + myParser.getRoots((double) XMin, (double) XMax));
+                }
+                else if (Event.getSource() == YinterceptButton) {
+                    YinterceptButton.setText("Y-int: " +  myParser.simplify(0));
+                }
+                else if (Event.getSource() == AsymptotesButton) {
+                    AsymptotesButton.setText("Asymptotes: " + myParser.getAsymptotes((double) XMin, (double) XMax));
+                }
+
+            }
+            else {
+                System.out.println("You have typed invalid characters in, or you have not typed anything at all. Type in an expression in the form y = f(x) so that its special values may be calculated");
+            }
+        }
+               //diagnostic
+        //System.out.println(inputEquation);
+    }
+
+    //helper method for actionPerformed(), determines if the input is valid
+    public boolean isValid(String input) {
+        try {
+            Parser myParser = new Parser(inputFunctionField.getText());
+            myParser.simplify(0);
+            return true;
+        }
+        catch (IndexOutOfBoundsException ie) {
+            return false;
+        } 
+        catch (NumberFormatException nu) {
+            return false;
+        }
+    }
+    //Main Method
+    public static void main (String[] args) {
+        GraphingCalculator calculatorrr = new GraphingCalculator();
+        calculatorrr.go();
+    }
+
+}
